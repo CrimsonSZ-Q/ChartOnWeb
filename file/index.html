@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart</title>
+    <link rel="icon" href="/source/favicon.png" type="image/png" sizes="32x32">
+    <script src="https://unpkg.com/htmx.org@2.0.0"
+        integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .fade-me-in.htmx-swapping {
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+        }
+
+        @import url('https://fonts.googleapis.com/css?family=Karla:400,700&display=swap');
+
+        .font-family-karla {
+            font-family: karla;
+        }
+
+        .bg-sidebar {
+            background: #3d68ff;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-family-karla flex justify-center items-center h-screen">
+
+    <div class="w-full flex flex-col h-screen overflow-y-hidden">
+        <div class="w-full overflow-x-hidden border-t flex flex-col">
+            <main class="w-full flex-grow p-6">
+                <h1 class="text-3xl text-black pb-6">Dashboard</h1>
+
+                <div class="flex flex-wrap mt-6">
+                    <div class="w-full lg:w-1/2 pr-0 lg:pr-2" hx-get="/chart-data/1" hx-swap="innerHTML"
+                        hx-trigger="load" hx-target="#chartContainer1">
+                        <p class="text-xl pb-3 flex items-center">
+                            <i class="fas fa-plus mr-3"></i> Chart Data
+                        </p>
+                        <div class="p-6 bg-white" id="chartContainer1">
+                            <canvas id="myChart1" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-1/2 pr-0 lg:pr-2" hx-get="/chart-data-bar/1" hx-swap="innerHTML"
+                        hx-trigger="load" hx-target="#chartContainerBar1">
+                        <p class="text-xl pb-3 flex items-center">
+                            <i class="fas fa-plus mr-3"></i> Chart Data
+                        </p>
+                        <div class="p-6 bg-white" id="chartContainerBar1">
+                            <canvas id="myChartBar1" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap mt-6">
+                    <div class="w-full lg:w-1/2 pr-0 lg:pr-2" hx-get="/chart-data/2" hx-swap="innerHTML"
+                        hx-trigger="load" hx-target="#chartContainer2">
+                        <p class="text-xl pb-3 flex items-center">
+                            <i class="fas fa-plus mr-3"></i> Chart Data
+                        </p>
+                        <div class="p-6 bg-white" id="chartContainer2">
+                            <canvas id="myChart2" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-1/2 pr-0 lg:pr-2" hx-get="/chart-data-bar/2" hx-swap="innerHTML"
+                    hx-trigger="load" hx-target="#chartContainerBar2">
+                        <p class="text-xl pb-3 flex items-center">
+                            <i class="fas fa-plus mr-3"></i> Chart Data
+                        </p>
+                        <div class="p-6 bg-white" id="chartContainerBar2">
+                            <canvas id="myChartBar2" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap mt-6">
+                    <div class="w-full lg:w-1/2 pr-0 lg:pr-2" hx-get="/chart-data/3" hx-swap="innerHTML"
+                        hx-trigger="load" hx-target="#chartContainer3">
+                        <p class="text-xl pb-3 flex items-center">
+                            <i class="fas fa-plus mr-3"></i> Chart Data
+                        </p>
+                        <div class="p-6 bg-white" id="chartContainer3">
+                            <canvas id="myChart3" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-1/2 pr-0 lg:pr-2" hx-get="/chart-data-bar/3" hx-swap="innerHTML"
+                    hx-trigger="load" hx-target="#chartContainerBar3">
+                        <p class="text-xl pb-3 flex items-center">
+                            <i class="fas fa-plus mr-3"></i> Chart Data
+                        </p>
+                        <div class="p-6 bg-white" id="chartContainerBar3">
+                            <canvas id="myChartBar3" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+
+    <!-- AlpineJS -->
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+    <!-- Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js"
+        integrity="sha256-KzZiKy0DWYsnwMF+X1DvQngQ2/FxF7MF3Ff72XcpuPs=" crossorigin="anonymous"></script>
+
+
+    <script>
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            if (event.detail.target.id.startsWith('chartContainer')) {
+                try {
+                    const data = JSON.parse(event.detail.xhr.responseText);
+                    if (event.detail.target.id.startsWith('chartContainerBar')) {
+                        renderBarChart(data, event.detail.target.id);
+                    } else {
+                        renderChart(data, event.detail.target.id);
+                    }
+                } catch (error) {
+                    console.error("Error parsing JSON:", error);
+                }
+            }
+        });
+
+        function getColorByLabel(label) {
+            const colorMap = {
+                'On Time': 'rgb(54, 162, 235)',
+                'Late': 'rgb(255, 0, 81)'
+
+            };
+            return colorMap[label] || 'rgb(54, 162, 235)';
+        }
+
+        function renderChart(data, containerId) {
+            const canvasId = containerId.replace('chartContainer', 'myChart');
+            const canvas = document.createElement('canvas');
+            canvas.id = canvasId;
+            document.getElementById(containerId).innerHTML = '';
+            document.getElementById(containerId).appendChild(canvas);
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Sample Data',
+                        data: data.values,
+                        backgroundColor: data.labels.map(label => getColorByLabel(label)),
+                        borderColor: data.labels.map(label => getColorByLabel(label)),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderBarChart(data, containerId) {
+            const canvasId = containerId.replace('chartContainer', 'myChart');
+            const canvas = document.createElement('canvas');
+            canvas.id = canvasId;
+            document.getElementById(containerId).innerHTML = '';
+            document.getElementById(containerId).appendChild(canvas);
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Sample Bar Data',
+                        data: data.values, // Pastikan data ini sesuai dengan format dari API-mu
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                autoSkip: false,
+                                maxTicksLimit: 21,
+                                callback: function (value, index, values) {
+                                    return value;
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
